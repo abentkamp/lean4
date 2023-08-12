@@ -305,6 +305,9 @@ string(APPEND LEANC_STATIC_LINKER_FLAGS " -lLake")
 
 set(LEAN_CXX_STDLIB "-lstdc++" CACHE STRING "C++ stdlib linker flags")
 
+
+# string(APPEND LEANSHARED_LINKER_FLAGS " -o o.html")
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LEAN_CXX_STDLIB "-lc++")
 endif()
@@ -314,17 +317,17 @@ string(APPEND LEANSHARED_LINKER_FLAGS " ${LEAN_CXX_STDLIB}")
 
 if(LLVM)
     # Here, we perform a replacement of `llvm-host` with `llvm`. This is necessary for our cross-compile
-    #   builds in `script/prepare-llvm-*.sh`. 
+    #   builds in `script/prepare-llvm-*.sh`.
     # - Recall that the host's copy of LLVM binaries and libraries is at
     #   `llvm-host`, and the target's copy of LLVM binaries and libraries is at
     #   `llvm`.
-    # - In an ideal world, we would run the target's `llvm/bin/llvm-config` and get the corrct link options for the target 
+    # - In an ideal world, we would run the target's `llvm/bin/llvm-config` and get the corrct link options for the target
     #   (e.g. `-Lllvm/lib/libLLVM`.)
     # - However, the target's `llvm/bin/llvm-config` has a different target
     #   triple from the host, and thus cannot be run on the host.
     # - So, we run the host `llvm-host/bin/llvm-config` from which we pick up
     #   compiler options, and change the output of the host to point to the target.
-    # - In particular, `host/bin/llvm-config` produces flags like `-Lllvm-host/lib/libLLVM`, while 
+    # - In particular, `host/bin/llvm-config` produces flags like `-Lllvm-host/lib/libLLVM`, while
     #   we need the path to be `-Lllvm/lib/libLLVM`. Thus, we perform this replacement here.
     string(APPEND LEANSHARED_LINKER_FLAGS " -L${LLVM_CONFIG_LIBDIR} ${LLVM_CONFIG_LDFLAGS} ${LLVM_CONFIG_LIBS} ${LLVM_CONFIG_SYSTEM_LIBS}")
     string(REPLACE "llvm-host" "llvm" LEANSHARED_LINKER_FLAGS ${LEANSHARED_LINKER_FLAGS})
@@ -334,11 +337,13 @@ if(LLVM)
 endif()
 
 # get rid of unused parts of C++ stdlib
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  string(APPEND LEANSHARED_LINKER_FLAGS " -Wl,-dead_strip")
-else()
-  string(APPEND LEANSHARED_LINKER_FLAGS " -Wl,--gc-sections")
-endif()
+# if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#   string(APPEND LEANSHARED_LINKER_FLAGS " -Wl,-dead_strip")
+# else()
+#   string(APPEND LEANSHARED_LINKER_FLAGS " -Wl,--gc-sections")
+# endif()
+
+# string(APPEND LEAN_EXTRA_LINKER_FLAGS " -fPIC")
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   string(APPEND LEAN_EXTRA_LINKER_FLAGS " -lm")

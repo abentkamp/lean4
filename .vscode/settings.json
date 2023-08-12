@@ -3,5 +3,8 @@
     "files.trimTrailingWhitespace": true,
     "[markdown]": {
         "rewrap.wrappingColumn": 70
+    },
+    "files.associations": {
+        "csignal": "cpp"
     }
 }
