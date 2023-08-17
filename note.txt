@@ -15,3 +15,7 @@ emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home
 
   function instantiateAsync() {
     if (false &&
+
+
+
+Module['arguments'] = ['prelude\n#check Prop']
