@@ -1,3 +1,13 @@
+cmake ../..
+
 cmake ../.. -D CMAKE_C_COMPILER=emcc -D CMAKE_CXX_COMPILER=emcc -D CMAKE_SYSTEM_NAME=Emscripten -DUSE_GMP=OFF -DCMAKE_C_FLAGS=fPIC -DCMAKE_CXX_FLAGS=-fPIC
 
 make
+
+cmake ../.. -D CMAKE_C_COMPILER=emcc -D CMAKE_CXX_COMPILER=emcc -D CMAKE_SYSTEM_NAME=Emscripten -DUSE_GMP=OFF -DCMAKE_C_FLAGS=fPIC -DCMAKE_CXX_FLAGS=-fPIC
+
+make
+
+
+cd ~/Projects/lean4/build/release/stage1/bin
+emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home/alex/Projects/lean4/build/release/stage1/lib/lean -l leanshared -o hello.html -O0 -g

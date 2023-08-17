@@ -104,7 +104,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
     # From https://emscripten.org/docs/compiling/WebAssembly.html#backends:
     # > The simple and safe thing is to pass all -s flags at both compile and link time.
-    set(EMSCRIPTEN_SETTINGS "-s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s MAIN_MODULE=1 -fexceptions")
+    set(EMSCRIPTEN_SETTINGS "-O0 -g -s SAFE_HEAP=1 -s ASSERTIONS=2 -s ASYNCIFY -s ASYNCIFY_IGNORE_INDIRECT -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -s DISABLE_EXCEPTION_CATCHING=0 -s MAIN_MODULE=1 -fexceptions")
     string(APPEND LEAN_EXTRA_CXX_FLAGS " -D LEAN_EMSCRIPTEN ${EMSCRIPTEN_SETTINGS}")
     string(APPEND LEAN_EXTRA_LINKER_FLAGS " ${EMSCRIPTEN_SETTINGS}")
 endif()
@@ -209,12 +209,12 @@ if (NOT MSVC)
     set(CMAKE_CXX_FLAGS_DEBUG          "-g3 ${CMAKE_CXX_FLAGS_DEBUG}")
     if (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
       # smallest+slower | -Oz .. -Os .. -O3 | largest+faster
-      set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Oz ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+      set(CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}")
     else ()
-      set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+      set(CMAKE_CXX_FLAGS_MINSIZEREL     "${CMAKE_CXX_FLAGS_MINSIZEREL}")
     endif ()
-    set(CMAKE_CXX_FLAGS_RELEASE        "-O3 ${CMAKE_CXX_FLAGS_RELEASE}")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g3 -fno-omit-frame-pointer ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+    set(CMAKE_CXX_FLAGS_RELEASE        "${CMAKE_CXX_FLAGS_RELEASE}")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g3 -fno-omit-frame-pointer ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 elseif (MULTI_THREAD)
     set(CMAKE_CXX_FLAGS_DEBUG          "/MTd ${CMAKE_CXX_FLAGS_DEBUG}")
     set(CMAKE_CXX_FLAGS_MINSIZEREL     "/MT ${CMAKE_CXX_FLAGS_MINSIZEREL}")
@@ -306,7 +306,7 @@ string(APPEND LEANC_STATIC_LINKER_FLAGS " -lLake")
 set(LEAN_CXX_STDLIB "-lstdc++" CACHE STRING "C++ stdlib linker flags")
 
 
-# string(APPEND LEANSHARED_LINKER_FLAGS " -o o.html")
+# string(APPEND LEANSHARED_LINKER_FLAGS " -o o.html -s USE_PTHREADS=0 --proxy-to-worker")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LEAN_CXX_STDLIB "-lc++")
@@ -543,6 +543,18 @@ if(${STAGE} GREATER 0)
     WORKING_DIRECTORY ${LEAN_SOURCE_DIR}
     DEPENDS leanshared
     COMMAND $(MAKE) -f ${CMAKE_BINARY_DIR}/stdlib.make Lake
+    VERBATIM)
+endif()
+
+if(${STAGE} GREATER 0)
+  if(NOT EXISTS ${LEAN_SOURCE_DIR}/hello/Hello.lean)
+    message(FATAL_ERROR "src/hello does not exist. Please check out the Hello submodule using `git submodule update --init src/lake`.")
+  endif()
+
+  add_custom_target(hello ALL
+    WORKING_DIRECTORY ${LEAN_SOURCE_DIR}
+    DEPENDS leanshared
+    COMMAND $(MAKE) -f ${CMAKE_BINARY_DIR}/stdlib.make Hello
     VERBATIM)
 endif()
 

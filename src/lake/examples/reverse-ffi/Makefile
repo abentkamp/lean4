@@ -7,6 +7,9 @@ all: run run-local
 lake:
 	lake --dir=lib build
 
+hello:
+	hello --dir=lib build
+
 ifneq ($(OS),Windows_NT)
 # Add shared library paths to loader path (no Windows equivalent)
   LINK_FLAGS=-Wl,-rpath,`lean --print-prefix`/lib/lean -Wl,-rpath,$(PWD)/lib/build/lib
