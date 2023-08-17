@@ -9,5 +9,9 @@ cmake ../.. -D CMAKE_C_COMPILER=emcc -D CMAKE_CXX_COMPILER=emcc -D CMAKE_SYSTEM_
 make
 
 
-cd ~/Projects/lean4/build/release/stage1/bin
+cd ~/Projects/lean4/build/release/stage1/lib/temp
 emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home/alex/Projects/lean4/build/release/stage1/lib/lean -l leanshared -o hello.html -O0 -g
+
+
+  function instantiateAsync() {
+    if (false &&

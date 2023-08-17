@@ -23,9 +23,9 @@ def version.minor : Nat := version.getMinor ()
 private opaque version.getPatch (u : Unit) : Nat
 def version.patch : Nat := version.getPatch ()
 
-@[extern "lean_get_githash"]
-opaque getGithash (u : Unit) : String
--- def getGithash (_ : Unit) : String := "a6f7f2513607a65b06ea9b7aa6cd9b1fe0b7a6e0"
+-- @[extern "lean_get_githash"]
+-- opaque getGithash (u : Unit) : String
+def getGithash (_ : Unit) : String := "a6f7f2513607a65b06ea9b7aa6cd9b1fe0b7a6e0"
 def githash : String := getGithash ()
 
 @[extern "lean_version_get_is_release"]
