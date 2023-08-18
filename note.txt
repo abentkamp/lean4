@@ -19,3 +19,10 @@ emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home
 
 
 Module['arguments'] = ['prelude\n#check Prop']
+
+
+node --no-experimental-fetch
+
+
+
+cat <(echo "var Module={arguments:['prelude\n#check Prop']};") hello | node

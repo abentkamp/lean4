@@ -90,13 +90,13 @@ stack_guard::stack_guard() {
     if (m_signal_stack.ss_sp == nullptr) return;
     m_signal_stack.ss_size = SIGSTKSZ;
     m_signal_stack.ss_flags = 0;
-    // sigaltstack(&m_signal_stack, nullptr);
+    sigaltstack(&m_signal_stack, nullptr);
 }
 
 stack_guard::~stack_guard() {
     if (!m_signal_stack.ss_sp) return;
     m_signal_stack.ss_flags = SS_DISABLE;
-    // sigaltstack(&m_signal_stack, nullptr);
+    sigaltstack(&m_signal_stack, nullptr);
     free(m_signal_stack.ss_sp);
 }
 #endif

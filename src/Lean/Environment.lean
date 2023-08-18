@@ -696,29 +696,22 @@ private def setImportedEntries (env : Environment) (mods : Array ModuleData) (st
 @[extern 1 "lean_get_num_attributes"] opaque getNumBuiltinAttributes : IO Nat
 
 private partial def finalizePersistentExtensions (env : Environment) (mods : Array ModuleData) (opts : Options) : IO Environment := do
-  loop 0 env
-where
-  loop (i : Nat) (env : Environment) : IO Environment := do
-    -- Recall that the size of the array stored `persistentEnvExtensionRef` may increase when we import user-defined environment extensions.
-    let pExtDescrs ← persistentEnvExtensionsRef.get
-    if i < pExtDescrs.size then
-      let extDescr := pExtDescrs[i]!
-      let s := extDescr.toEnvExtension.getState env
-      let prevSize := (← persistentEnvExtensionsRef.get).size
-      let prevAttrSize ← getNumBuiltinAttributes
-      let newState ← extDescr.addImportedFn s.importedEntries { env := env, opts := opts }
-      let mut env := extDescr.toEnvExtension.setState env { s with state := newState }
-      env ← ensureExtensionsArraySize env
-      if (← persistentEnvExtensionsRef.get).size > prevSize || (← getNumBuiltinAttributes) > prevAttrSize then
-        -- This branch is executed when `pExtDescrs[i]` is the extension associated with the `init` attribute, and
-        -- a user-defined persistent extension is imported.
-        -- Thus, we invoke `setImportedEntries` to update the array `importedEntries` with the entries for the new extensions.
-        env ← setImportedEntries env mods prevSize
-        -- See comment at `updateEnvAttributesRef`
-        env ← updateEnvAttributes env
-      loop (i + 1) env
-    else
-      return env
+  let pExtDescrs ← persistentEnvExtensionsRef.get
+  for extDescr in pExtDescrs do
+    let s := extDescr.toEnvExtension.getState env
+    let prevSize := (← persistentEnvExtensionsRef.get).size
+    let prevAttrSize ← getNumBuiltinAttributes
+    let newState ← extDescr.addImportedFn s.importedEntries { env := env, opts := opts }
+    let mut env := extDescr.toEnvExtension.setState env { s with state := newState }
+    env ← ensureExtensionsArraySize env
+    if (← persistentEnvExtensionsRef.get).size > prevSize || (← getNumBuiltinAttributes) > prevAttrSize then
+      -- This branch is executed when `pExtDescrs[i]` is the extension associated with the `init` attribute, and
+      -- a user-defined persistent extension is imported.
+      -- Thus, we invoke `setImportedEntries` to update the array `importedEntries` with the entries for the new extensions.
+      env ← setImportedEntries env mods prevSize
+      -- See comment at `updateEnvAttributesRef`
+      env ← updateEnvAttributes env
+  return env
 
 structure ImportState where
   moduleNameSet : NameHashSet := {}

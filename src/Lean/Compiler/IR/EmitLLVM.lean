@@ -111,11 +111,11 @@ instance : ToString RefcountKind where
 def callLeanRefcountFn (builder : LLVM.Builder llvmctx)
     (kind : RefcountKind) (checkRef? : Bool) (arg : LLVM.Value llvmctx)
     (delta : Option (LLVM.Value llvmctx) := Option.none) : M llvmctx Unit := do
-  let fnName :=  s!"lean_{kind}{if checkRef? then "" else "_ref"}{if delta.isNone then "" else "_n"}" 
+  let fnName :=  s!"lean_{kind}{if checkRef? then "" else "_ref"}{if delta.isNone then "" else "_n"}"
   let retty ← LLVM.voidType llvmctx
   let argtys := if delta.isNone then #[← LLVM.voidPtrType llvmctx] else #[← LLVM.voidPtrType llvmctx, ← LLVM.size_tType llvmctx]
   let fn ← getOrCreateFunctionPrototype (← getLLVMModule) retty fnName argtys
-  let fnty ← LLVM.functionType retty argtys 
+  let fnty ← LLVM.functionType retty argtys
   match delta with
   | .none => do
     -- since refcount δ is 1, we only supply the pointer.
@@ -1119,12 +1119,12 @@ def emitFnArgs (builder : LLVM.Builder llvmctx)
           let llvmty ← toLLVMType param.ty
           -- pv := *(argsi) = *(args + i)
           let pv ← LLVM.buildLoad2 builder llvmty argsi
-          -- slot for arg[i] which is always void* ? 
+          -- slot for arg[i] which is always void* ?
           let alloca ← LLVM.buildAlloca builder llvmty s!"arg_{i}"
           LLVM.buildStore builder pv alloca
           addVartoState params[i]!.x alloca llvmty
   else
-      let n := LLVM.countParams llvmfn
+      let n ← LLVM.countParams llvmfn
       for i in (List.range n.toNat) do
         let llvmty ← toLLVMType params[i]!.ty
         let alloca ← LLVM.buildAlloca builder  llvmty s!"arg_{i}"
@@ -1181,7 +1181,7 @@ def emitFns (mod : LLVM.Module llvmctx) (builder : LLVM.Builder llvmctx) : M llv
   let decls := getDecls env
   decls.reverse.forM (emitDecl mod builder)
 
-def callIODeclInitFn (builder : LLVM.Builder llvmctx) 
+def callIODeclInitFn (builder : LLVM.Builder llvmctx)
     (initFnName : String)
     (world : LLVM.Value llvmctx): M llvmctx (LLVM.Value llvmctx) := do
   let retty ← LLVM.voidPtrType llvmctx
@@ -1203,7 +1203,7 @@ def emitDeclInit (builder : LLVM.Builder llvmctx)
   let env ← getEnv
   if isIOUnitInitFn env d.name then do
     let world ← callLeanIOMkWorld builder
-    let resv ← callIODeclInitFn builder (← toCName d.name) world 
+    let resv ← callIODeclInitFn builder (← toCName d.name) world
     let err? ← callLeanIOResultIsError builder resv "is_error"
     buildIfThen_ builder s!"init_{d.name}_isError" err?
       (fun builder => do
@@ -1222,7 +1222,7 @@ def emitDeclInit (builder : LLVM.Builder llvmctx)
       if checkBuiltin? then
         -- `builtin` is set to true if the initializer is part of the executable,
         -- and not loaded dynamically.
-        let builtinParam ← LLVM.getParam parentFn 0 
+        let builtinParam ← LLVM.getParam parentFn 0
         let cond ← buildLeanBoolTrue? builder builtinParam "is_builtin_true"
         let _ ← LLVM.buildCondBr builder cond initBB restBB
        else
@@ -1245,7 +1245,7 @@ def emitDeclInit (builder : LLVM.Builder llvmctx)
          callLeanMarkPersistentFn builder dval
       let _ ← LLVM.buildBr builder restBB
       LLVM.positionBuilderAtEnd builder restBB
-    | none => do 
+    | none => do
       let llvmty ← toLLVMType d.resultType
       let dslot ←  LLVM.getOrAddGlobal (← getLLVMModule) (← toCName d.name) llvmty
       LLVM.setInitializer dslot (← LLVM.getUndef llvmty)
@@ -1324,7 +1324,7 @@ def callLeanSetPanicMessages (builder : LLVM.Builder llvmctx)
   let argtys := #[ ← LLVM.i1Type llvmctx ]
   let fn ← getOrCreateFunctionPrototype (← getLLVMModule) retty fnName argtys
   let fnty ← LLVM.functionType retty argtys
-  let _ ← LLVM.buildCall2 builder fnty fn #[enable?] 
+  let _ ← LLVM.buildCall2 builder fnty fn #[enable?]
 
 def callLeanIOMarkEndInitialization (builder : LLVM.Builder llvmctx) : M llvmctx Unit := do
   let fnName :=  "lean_io_mark_end_initialization"
@@ -1377,7 +1377,7 @@ def callLeanIOResultShowError (builder : LLVM.Builder llvmctx)
   let fnty ← LLVM.functionType retty argtys
   let _ ← LLVM.buildCall2 builder fnty fn #[v] name
 
-def callLeanMainFn (builder : LLVM.Builder llvmctx) 
+def callLeanMainFn (builder : LLVM.Builder llvmctx)
     (argv? : Option (LLVM.Value llvmctx))
     (world : LLVM.Value llvmctx)
     (name : String) : M llvmctx (LLVM.Value llvmctx) := do
@@ -1386,7 +1386,7 @@ def callLeanMainFn (builder : LLVM.Builder llvmctx)
   let argtys := if argv?.isSome then #[ voidptr, voidptr ] else #[ voidptr ]
   let fn ← getOrCreateFunctionPrototype (← getLLVMModule) retty leanMainFn argtys
   let fnty ← LLVM.functionType retty argtys
-  let args := match argv? with 
+  let args := match argv? with
               | .some argv => #[argv, world]
               | .none => #[world]
   LLVM.buildCall2 builder fnty fn args name
