@@ -23,6 +23,11 @@ Module['arguments'] = ['prelude\n#check Prop']
 
 node --no-experimental-fetch
 
+To enable NodeFS:
+emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home/alex/Projects/lean4/build/release/stage1/lib/lean -l leanshared -o hello.html -O0 -g -lnodefs.js
 
 
 cat <(echo "var Module={arguments:['prelude\n#check Prop']};") hello | node
+
+Compiling Prelude needs to increase memory and stack size:
+emcc Hello.c -I /home/alex/Projects/lean4/build/release/stage1/include/ -L /home/alex/Projects/lean4/build/release/stage1/lib/lean -l leanshared -o hello.html -O0 -g -lnodefs.js -sSTACK_SIZE=1200000 -sALLOW_MEMORY_GROWTH=1

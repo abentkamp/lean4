@@ -104,7 +104,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
     # From https://emscripten.org/docs/compiling/WebAssembly.html#backends:
     # > The simple and safe thing is to pass all -s flags at both compile and link time.
-    set(EMSCRIPTEN_SETTINGS "-O0 -g -s SAFE_HEAP=1 -s ASSERTIONS=2 -s ASYNCIFY -s ASYNCIFY_IGNORE_INDIRECT -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -sNO_DISABLE_EXCEPTION_CATCHING -s MAIN_MODULE=1 -fwasm-exceptions")
+    set(EMSCRIPTEN_SETTINGS "-O0 -g -s SAFE_HEAP=1 -s ASSERTIONS=2 -s ASYNCIFY -s ASYNCIFY_IGNORE_INDIRECT -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -sNO_DISABLE_EXCEPTION_CATCHING -s MAIN_MODULE=1 -fwasm-exceptions -lnodefs.js")
     string(APPEND LEAN_EXTRA_CXX_FLAGS " -D LEAN_EMSCRIPTEN ${EMSCRIPTEN_SETTINGS}")
     string(APPEND LEAN_EXTRA_LINKER_FLAGS " ${EMSCRIPTEN_SETTINGS}")
 endif()
