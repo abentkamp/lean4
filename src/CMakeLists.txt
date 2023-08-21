@@ -104,7 +104,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
 
     # From https://emscripten.org/docs/compiling/WebAssembly.html#backends:
     # > The simple and safe thing is to pass all -s flags at both compile and link time.
-    set(EMSCRIPTEN_SETTINGS "-O0 -g -s SAFE_HEAP=1 -s ASSERTIONS=2 -s ASYNCIFY -s ASYNCIFY_IGNORE_INDIRECT -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -sNO_DISABLE_EXCEPTION_CATCHING -s MAIN_MODULE=1 -fwasm-exceptions -lnodefs.js")
+    set(EMSCRIPTEN_SETTINGS "-O0 -g -s SAFE_HEAP=1 -s ASSERTIONS=2 -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -s MAIN_MODULE=1 -fwasm-exceptions -lnodefs.js -DUSE_GMP=OFF -fPIC")
     string(APPEND LEAN_EXTRA_CXX_FLAGS " -D LEAN_EMSCRIPTEN ${EMSCRIPTEN_SETTINGS}")
     string(APPEND LEAN_EXTRA_LINKER_FLAGS " ${EMSCRIPTEN_SETTINGS}")
 endif()
@@ -222,20 +222,20 @@ elseif (MULTI_THREAD)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 endif ()
 
-if("${USE_GMP}" MATCHES "ON")
-  set(CMAKE_CXX_FLAGS                "-D LEAN_USE_GMP ${CMAKE_CXX_FLAGS}")
-  if("${CMAKE_SYSTEM_NAME}" MATCHES "Emscripten")
-    include_directories(${GMP_INSTALL_PREFIX}/include)
-    set(GMP_LIBRARIES "${GMP_INSTALL_PREFIX}/lib/libgmp.a")
-  else()
-    # GMP
-    find_package(GMP 5.0.5 REQUIRED)
-    include_directories(${GMP_INCLUDE_DIR})
-  endif()
-  if(NOT LEAN_STANDALONE)
-    string(APPEND LEAN_EXTRA_LINKER_FLAGS " ${GMP_LIBRARIES}")
-  endif()
-endif()
+# if("${USE_GMP}" MATCHES "ON")
+#   set(CMAKE_CXX_FLAGS                "-D LEAN_USE_GMP ${CMAKE_CXX_FLAGS}")
+#   if("${CMAKE_SYSTEM_NAME}" MATCHES "Emscripten")
+#     include_directories(${GMP_INSTALL_PREFIX}/include)
+#     set(GMP_LIBRARIES "${GMP_INSTALL_PREFIX}/lib/libgmp.a")
+#   else()
+#     # GMP
+#     find_package(GMP 5.0.5 REQUIRED)
+#     include_directories(${GMP_INCLUDE_DIR})
+#   endif()
+#   if(NOT LEAN_STANDALONE)
+#     string(APPEND LEAN_EXTRA_LINKER_FLAGS " ${GMP_LIBRARIES}")
+#   endif()
+# endif()
 
 # ccache
 if(CCACHE AND NOT CMAKE_CXX_COMPILER_LAUNCHER AND NOT CMAKE_C_COMPILER_LAUNCHER)
@@ -306,7 +306,7 @@ string(APPEND LEANC_STATIC_LINKER_FLAGS " -lLake")
 set(LEAN_CXX_STDLIB "-lstdc++" CACHE STRING "C++ stdlib linker flags")
 
 
-# string(APPEND LEANSHARED_LINKER_FLAGS " -o o.html -s USE_PTHREADS=0 --proxy-to-worker")
+string(APPEND LEANSHARED_LINKER_FLAGS "-s USE_PTHREADS=0 --proxy-to-worker")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(LEAN_CXX_STDLIB "-lc++")
@@ -343,7 +343,7 @@ endif()
 #   string(APPEND LEANSHARED_LINKER_FLAGS " -Wl,--gc-sections")
 # endif()
 
-# string(APPEND LEAN_EXTRA_LINKER_FLAGS " -fPIC")
+string(APPEND LEANC_EXTRA_FLAGS " -fPIC")
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   string(APPEND LEAN_EXTRA_LINKER_FLAGS " -lm")
