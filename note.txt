@@ -51,3 +51,9 @@ emcmake cmake ../.. -DCMAKE_C_FLAGS=fPIC -DCMAKE_CXX_FLAGS=-fPIC
 make
 
 Not sure if the PIC args are still needed.
+
+
+----
+Finally a single command that does not trigger the Name.set 64x issue:
+cmake ../.. -D CMAKE_C_COMPILER=emcc -D CMAKE_CXX_COMPILER=emcc -DUSE_GMP=OFF -DCMAKE_C_FLAGS=fPIC -DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_COMPILER_WORKS=1
+make
