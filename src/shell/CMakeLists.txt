@@ -6,7 +6,7 @@ endif()
 add_library(shell OBJECT ${SRC})
 
 if(LLVM)
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  if((${CMAKE_SYSTEM_NAME} MATCHES "Linux") OR (${CMAKE_SYSTEM_NAME} MATCHES "Emscripten"))
     set(LLVM_SYSTEM_LIBS "-lz -ltinfo")
   elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
     # macOS doesn't have -Bstatic, so let cmake search for the libraries
