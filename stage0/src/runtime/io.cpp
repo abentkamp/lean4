@@ -426,7 +426,7 @@ extern "C" obj_res lean_io_get_random_bytes (size_t nbytes, obj_arg /* w */) {
 #else
     #if defined(LEAN_EMSCRIPTEN)
         // `Crypto.getRandomValues` documents `dest` should be at most 65536 bytes.
-        size_t read_sz = std::min(remain, 65536);
+        size_t read_sz = std::min(remain, static_cast<size_t>(65536));
     #else
         size_t read_sz = remain;
     #endif
