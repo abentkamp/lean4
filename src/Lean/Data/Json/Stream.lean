@@ -18,6 +18,7 @@ open IO
 def readJson (h : FS.Stream) (nBytes : Nat) : IO Json := do
   let bytes ← h.read (USize.ofNat nBytes)
   let s := String.fromUTF8Unchecked bytes
+  IO.println s!"received: {s}"
   ofExcept (Json.parse s)
 
 def writeJson (h : FS.Stream) (j : Json) : IO Unit := do

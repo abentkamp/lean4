@@ -324,7 +324,7 @@ extern "C" LEAN_EXPORT obj_res lean_io_prim_handle_read(b_obj_arg h, usize nbyte
 #if defined(LEAN_EMSCRIPTEN)
     obj_res res = lean_alloc_sarray(1, 0, nbytes);
     js_read(lean_sarray_cptr(res), nbytes);
-    lean_sarray_set_size(res, nbytes);
+    lean_sarray_set_size(res, nbytes - 1);
     return io_result_mk_ok(res);
 #else
     FILE * fp = io_get_handle(h);
