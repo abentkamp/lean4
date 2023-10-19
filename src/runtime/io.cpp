@@ -399,7 +399,7 @@ extern "C" LEAN_EXPORT obj_res lean_io_prim_handle_get_line(b_obj_arg h, obj_arg
 /* Handle.putStr : (@& Handle) → (@& String) → IO Unit */
 extern "C" LEAN_EXPORT obj_res lean_io_prim_handle_put_str(b_obj_arg h, b_obj_arg s, obj_arg /* w */) {
     EM_ASM({
-        console.log('I received: ' + UTF8ToString($0));
+        IO.putStr(UTF8ToString($0));
     }, lean_string_cstr(s));
     FILE * fp = io_get_handle(h);
     if (std::fputs(lean_string_cstr(s), fp) != EOF) {

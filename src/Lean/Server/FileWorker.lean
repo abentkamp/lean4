@@ -24,6 +24,7 @@ import Lean.Server.FileWorker.Utils
 import Lean.Server.FileWorker.RequestHandling
 import Lean.Server.FileWorker.WidgetRequests
 import Lean.Server.Rpc.Basic
+import Lean.Server.Watchdog
 import Lean.Widget.InteractiveDiagnostic
 
 /-!
@@ -473,7 +474,35 @@ def initAndRunWorker (i o e : FS.Stream) (opts : Options) : IO UInt32 := do
   let i ← maybeTee "fwIn.txt" false i
   let o ← maybeTee "fwOut.txt" true o
   let initParams ← i.readLspRequestAs "initialize" InitializeParams
+
+  o.writeLspResponse {
+    id     := initParams.id
+    result := {
+      capabilities := Watchdog.mkLeanServerCapabilities
+      serverInfo?  := some {
+        name     := "Lean 4 Server"
+        version? := "0.1.2"
+      }
+      : InitializeResult
+    }
+  }
+  -- o.writeLspRequest {
+  --   id := RequestID.str "register_ilean_watcher"
+  --   method := "client/registerCapability"
+  --   param := some {
+  --     registrations := #[ {
+  --       id := "ilean_watcher"
+  --       method := "workspace/didChangeWatchedFiles"
+  --       registerOptions := some <| toJson {
+  --         watchers := #[ { globPattern := "**/*.ilean" } ]
+  --       : DidChangeWatchedFilesRegistrationOptions }
+  --     } ]
+  --   : RegistrationParams }
+  -- }
+
+  discard $ i.readLspNotificationAs "initialized" InitializedParams
   let ⟨_, param⟩ ← i.readLspNotificationAs "textDocument/didOpen" DidOpenTextDocumentParams
+
   let doc := param.textDocument
   /- NOTE(WN): `toFileMap` marks line beginnings as immediately following
     "\n", which should be enough to handle both LF and CRLF correctly.
