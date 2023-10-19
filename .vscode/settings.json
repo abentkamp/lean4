@@ -3,5 +3,16 @@
     "files.trimTrailingWhitespace": true,
     "[markdown]": {
         "rewrap.wrappingColumn": 70
+    },
+    "files.associations": {
+        "*.tcc": "cpp",
+        "string": "cpp",
+        "cmath": "cpp",
+        "sstream": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "vector": "cpp",
+        "iterator": "cpp",
+        "string_view": "cpp"
     }
 }

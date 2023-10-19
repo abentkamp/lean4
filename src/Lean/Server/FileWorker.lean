@@ -492,19 +492,19 @@ def initAndRunWorker (i o e : FS.Stream) (opts : Options) : IO UInt32 := do
     return (1 : UInt32)
 
 @[export lean_server_worker_main]
-def workerMain (opts : Options) : IO UInt32 := do
+def workerMain (_ : Options) : IO UInt32 := do
   let i ← IO.getStdin
   let o ← IO.getStdout
-  let e ← IO.getStderr
+  o.putStr "Start"
   try
-    let exitCode ← initAndRunWorker i o e opts
-    -- HACK: all `Task`s are currently "foreground", i.e. we join on them on main thread exit, but we definitely don't
-    -- want to do that in the case of the worker processes, which can produce non-terminating tasks evaluating user code
-    o.flush
-    e.flush
-    IO.Process.exit exitCode.toUInt8
-  catch err =>
-    e.putStrLn s!"worker initialization error: {err}"
-    return (1 : UInt32)
+    discard $ i.readLspMessage
+  catch e =>
+    o.putStr s!"ERROR: {e}"
+  -- o.putStr "START"
+  -- let str ← i.getLine
+  -- o.putStr str
+  o.putStr "END"
+  return (0 : UInt32)
+
 
 end Lean.Server.FileWorker

@@ -438,21 +438,21 @@ extern "C" LEAN_EXPORT int lean_main(int argc, char ** argv) {
 #ifdef LEAN_EMSCRIPTEN
     // When running in command-line mode under Node.js, we make system directories available in the virtual filesystem.
     // This mode is used to compile 32-bit oleans.
-    EM_ASM(
-        if ((typeof process === "undefined") || (process.release.name !== "node")) {
-            throw new Error("The Lean command-line driver can only run under Node.js. For the embeddable WASM library, see lean_wasm.cpp.");
-        }
+    // EM_ASM(
+    //     if ((typeof process === "undefined") || (process.release.name !== "node")) {
+    //         throw new Error("The Lean command-line driver can only run under Node.js. For the embeddable WASM library, see lean_wasm.cpp.");
+    //     }
 
-        var lean_path = process.env["LEAN_PATH"];
-        if (lean_path) {
-            ENV["LEAN_PATH"] = lean_path;
-        }
+    //     var lean_path = process.env["LEAN_PATH"];
+    //     if (lean_path) {
+    //         ENV["LEAN_PATH"] = lean_path;
+    //     }
 
-        // We cannot mount /, see https://github.com/emscripten-core/emscripten/issues/2040
-        FS.mount(NODEFS, { root: "/home" }, "/home");
-        FS.mount(NODEFS, { root: "/tmp" }, "/tmp");
-        FS.chdir(process.cwd());
-    );
+    //     // We cannot mount /, see https://github.com/emscripten-core/emscripten/issues/2040
+    //     FS.mount(NODEFS, { root: "/home" }, "/home");
+    //     FS.mount(NODEFS, { root: "/tmp" }, "/tmp");
+    //     FS.chdir(process.cwd());
+    // );
 #elif defined(LEAN_WINDOWS)
     // "best practice" according to https://docs.microsoft.com/en-us/windows/win32/api/errhandlingapi/nf-errhandlingapi-seterrormode
     SetErrorMode(SEM_FAILCRITICALERRORS);
@@ -475,14 +475,14 @@ extern "C" LEAN_EXPORT int lean_main(int argc, char ** argv) {
     num_threads = hardware_concurrency();
 #endif
 
-    try {
-        // Remark: This currently runs under `IO.initializing = true`.
-        init_search_path();
-    } catch (lean::throwable & ex) {
-        std::cerr << "error: " << ex.what() << std::endl;
-        return 1;
-    }
-    consume_io_result(lean_enable_initializer_execution(io_mk_world()));
+    // try {
+    //     // Remark: This currently runs under `IO.initializing = true`.
+    //     init_search_path();
+    // } catch (lean::throwable & ex) {
+    //     std::cerr << "error: " << ex.what() << std::endl;
+    //     return 1;
+    // }
+    // consume_io_result(lean_enable_initializer_execution(io_mk_world()));
 
     options opts = get_default_options();
     optional<std::string> server_in;
@@ -622,167 +622,43 @@ extern "C" LEAN_EXPORT int lean_main(int argc, char ** argv) {
         }
     }
 
-    lean::io_mark_end_initialization();
+    // lean::io_mark_end_initialization();
 
-    if (print_prefix) {
-        std::cout << get_io_result<string_ref>(lean_get_prefix(io_mk_world())).data() << std::endl;
-        return 0;
-    }
+    // if (print_prefix) {
+    //     std::cout << get_io_result<string_ref>(lean_get_prefix(io_mk_world())).data() << std::endl;
+    //     return 0;
+    // }
 
-    if (print_libdir) {
-        string_ref prefix = get_io_result<string_ref>(lean_get_prefix(io_mk_world()));
-        std::cout << get_io_result<string_ref>(lean_get_libdir(prefix.to_obj_arg(), io_mk_world())).data() << std::endl;
-        return 0;
-    }
+    // if (print_libdir) {
+    //     string_ref prefix = get_io_result<string_ref>(lean_get_prefix(io_mk_world()));
+    //     std::cout << get_io_result<string_ref>(lean_get_libdir(prefix.to_obj_arg(), io_mk_world())).data() << std::endl;
+    //     return 0;
+    // }
 
-    if (auto max_memory = opts.get_unsigned(get_max_memory_opt_name(),
-                                            opts.get_bool("server") ? LEAN_SERVER_DEFAULT_MAX_MEMORY
-                                                                    : LEAN_DEFAULT_MAX_MEMORY)) {
-        set_max_memory_megabyte(max_memory);
-    }
+    // if (auto max_memory = opts.get_unsigned(get_max_memory_opt_name(),
+    //                                         opts.get_bool("server") ? LEAN_SERVER_DEFAULT_MAX_MEMORY
+    //                                                                 : LEAN_DEFAULT_MAX_MEMORY)) {
+    //     set_max_memory_megabyte(max_memory);
+    // }
 
-    if (auto timeout = opts.get_unsigned(get_timeout_opt_name(),
-                                         opts.get_bool("server") ? LEAN_SERVER_DEFAULT_MAX_HEARTBEAT
-                                                                 : LEAN_DEFAULT_MAX_HEARTBEAT)) {
-        set_max_heartbeat_thousands(timeout);
-    }
+    // if (auto timeout = opts.get_unsigned(get_timeout_opt_name(),
+    //                                      opts.get_bool("server") ? LEAN_SERVER_DEFAULT_MAX_HEARTBEAT
+    //                                                              : LEAN_DEFAULT_MAX_HEARTBEAT)) {
+    //     set_max_heartbeat_thousands(timeout);
+    // }
 
-    if (get_profiler(opts)) {
-        report_profiling_time("initialization", init_time);
-    }
+    // if (get_profiler(opts)) {
+    //     report_profiling_time("initialization", init_time);
+    // }
 
-    environment env(trust_lvl);
-    scoped_task_manager scope_task_man(num_threads);
-    optional<name> main_module_name;
+    // environment env(trust_lvl);
+    // scoped_task_manager scope_task_man(num_threads);
+    // optional<name> main_module_name;
 
     std::string mod_fn = "<unknown>";
     std::string contents;
-
     try {
-        if (run_server == 1)
-            return run_server_watchdog(forwarded_args);
-        else if (run_server == 2)
             return run_server_worker(opts);
-
-        if (only_deps && deps_json) {
-            buffer<string_ref> fns;
-            if (use_stdin) {
-                std::string fn;
-                while (std::cin >> fn) {
-                    fns.push_back(string_ref(fn));
-                }
-            } else {
-                for (int i = optind; i < argc; i++) {
-                    fns.push_back(string_ref(argv[i]));
-                }
-            }
-            print_imports_json(fns);
-            return 0;
-        }
-
-        if (use_stdin) {
-            if (argc - optind != 0) {
-                mod_fn = argv[optind++];
-            } else {
-                mod_fn = "<stdin>";
-            }
-            std::stringstream buf;
-            buf << std::cin.rdbuf();
-            contents = buf.str();
-        } else {
-            if ((!run && argc - optind != 1) || (run && argc - optind == 0)) {
-                std::cerr << "Expected exactly one file name\n";
-                display_help(std::cerr);
-                return 1;
-            }
-            mod_fn = argv[optind++];
-            contents = read_file(mod_fn);
-            main_module_name = module_name_of_file(mod_fn, root_dir, /* optional */ !olean_fn && !c_output);
-        }
-
-        if (only_deps) {
-            print_imports(contents, mod_fn);
-            return 0;
-        }
-
-        // Quick and dirty `#lang` support
-        // TODO: make it extensible, and add `lean4md`
-        if (contents.compare(0, 5, "#lang") == 0) {
-            auto end_line_pos = contents.find("\n");
-            // TODO: trim
-            auto lang_id      = contents.substr(6, end_line_pos - 6);
-            if (lang_id == "lean4") {
-                // do nothing for now
-            } else {
-                std::cerr << "unknown language '" << lang_id << "'\n";
-                return 1;
-            }
-            // Remove up to `\n`
-            contents.erase(0, end_line_pos);
-        }
-
-        if (!main_module_name)
-            main_module_name = name("_stdin");
-        pair_ref<environment, object_ref> r = run_new_frontend(contents, opts, mod_fn, *main_module_name, trust_lvl, ilean_fn);
-        env = r.fst();
-        bool ok = unbox(r.snd().raw());
-
-        if (stats) {
-            env.display_stats();
-        }
-
-        if (run && ok) {
-            uint32 ret = ir::run_main(env, opts, argc - optind, argv + optind);
-            // environment_free_regions(std::move(env));
-            return ret;
-        }
-        if (olean_fn && ok) {
-            time_task t(".olean serialization", opts);
-            write_module(env, *olean_fn);
-        }
-
-        if (c_output && ok) {
-            std::ofstream out(*c_output, std::ios_base::binary);
-            if (out.fail()) {
-                std::cerr << "failed to create '" << *c_output << "'\n";
-                return 1;
-            }
-            time_task _("C code generation", opts);
-            out << lean::ir::emit_c(env, *main_module_name).data();
-            out.close();
-        }
-
-        // target triple is only used by the LLVM backend. Save users
-        // a great deal of pain by erroring out if they misuse flags.
-        if (target_triple && !llvm_output) {
-            std::cerr << "ERROR: '--target' must be used with '--bc' to enable LLVM backend. Quitting code generation.\n";
-            return 1;
-        }
-
-        if (llvm_output && ok) {
-	        // marshal 'optional<string>' to 'lean_object*'
-            lean_object* const target_triple_lean =
-                target_triple ? mk_option_some(lean::string_ref(*target_triple).to_obj_arg()) : mk_option_none();
-            initialize_Lean_Compiler_IR_EmitLLVM(/*builtin*/ false,
-                    lean_io_mk_world());
-            time_task _("LLVM code generation", opts);
-            lean::consume_io_result(lean_ir_emit_llvm(
-                        env.to_obj_arg(), (*main_module_name).to_obj_arg(),
-                        lean::string_ref(*llvm_output).to_obj_arg(),
-                        target_triple_lean,
-                        lean_io_mk_world()));
-        }
-
-        display_cumulative_profiling_times(std::cerr);
-
-#ifdef LEAN_SMALL_ALLOCATOR
-        // If the small allocator is not enabled, then we assume we are not using the sanitizer.
-        // Thus, we interrupt execution without garbage collecting.
-        // This is useful when profiling improvements to Lean startup time.
-        exit(ok ? 0 : 1);
-#else
-        return ok ? 0 : 1;
-#endif
     } catch (lean::throwable & ex) {
         std::cerr << ex.what() << "\n";
     } catch (std::bad_alloc & ex) {
