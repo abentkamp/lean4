@@ -194,26 +194,27 @@ section Initialization
     -- parsing should not take long, do synchronously
     let (headerStx, headerParserState, msgLog) ← Parser.parseHeader m.mkInputContext
     (headerStx, ·) <$> EIO.asTask do
-      let mut srcSearchPath ← initSrcSearchPath (← getBuildDir)
-      let lakePath ← match (← IO.getEnv "LAKE") with
-        | some path => pure <| System.FilePath.mk path
-        | none =>
-          let lakePath ← match (← IO.getEnv "LEAN_SYSROOT") with
-            | some path => pure <| System.FilePath.mk path / "bin" / "lake"
-            | _         => pure <| (← appDir) / "lake"
-          pure <| lakePath.withExtension System.FilePath.exeExtension
-      let (headerEnv, msgLog) ← try
-        if let some path := System.Uri.fileUriToPath? m.uri then
-          -- NOTE: we assume for now that `lakefile.lean` does not have any non-stdlib deps
-          -- NOTE: lake does not exist in stage 0 (yet?)
-          if path.fileName != "lakefile.lean" && (← System.FilePath.pathExists lakePath) then
-            let pkgSearchPath ← lakeSetupSearchPath lakePath m (Lean.Elab.headerToImports headerStx) hOut
-            srcSearchPath ← initSrcSearchPath (← getBuildDir) pkgSearchPath
-        Elab.processHeader headerStx opts msgLog m.mkInputContext
-      catch e =>  -- should be from `lake print-paths`
-        let msgs := MessageLog.empty.add { fileName := "<ignored>", pos := ⟨0, 0⟩, data := e.toString }
-        pure (← mkEmptyEnvironment, msgs)
-      let mut headerEnv := headerEnv
+      -- let mut srcSearchPath ← initSrcSearchPath (← getBuildDir)
+      -- let lakePath ← match (← IO.getEnv "LAKE") with
+      --   | some path => pure <| System.FilePath.mk path
+      --   | none =>
+      --     let lakePath ← match (← IO.getEnv "LEAN_SYSROOT") with
+      --       | some path => pure <| System.FilePath.mk path / "bin" / "lake"
+      --       | _         => pure <| (← appDir) / "lake"
+      --     pure <| lakePath.withExtension System.FilePath.exeExtension
+      -- let (headerEnv, msgLog) ← try
+      --   if let some path := System.Uri.fileUriToPath? m.uri then
+      --     -- NOTE: we assume for now that `lakefile.lean` does not have any non-stdlib deps
+      --     -- NOTE: lake does not exist in stage 0 (yet?)
+      --     if path.fileName != "lakefile.lean" && (← System.FilePath.pathExists lakePath) then
+      --       let pkgSearchPath ← lakeSetupSearchPath lakePath m (Lean.Elab.headerToImports headerStx) hOut
+      --       srcSearchPath ← initSrcSearchPath (← getBuildDir) pkgSearchPath
+      --   Elab.processHeader headerStx opts msgLog m.mkInputContext
+      -- catch e =>  -- should be from `lake print-paths`
+      --   let msgs := MessageLog.empty.add { fileName := "<ignored>", pos := ⟨0, 0⟩, data := e.toString }
+      --   pure (← mkEmptyEnvironment, msgs)
+
+      let mut headerEnv := ← mkEmptyEnvironment
       try
         if let some path := System.Uri.fileUriToPath? m.uri then
           headerEnv := headerEnv.setMainModule (← moduleNameOfFileName path none)
@@ -244,7 +245,7 @@ section Initialization
         tacticCache := (← IO.mkRef {})
       }
       publishDiagnostics m headerSnap.diagnostics.toArray hOut
-      return (headerSnap, srcSearchPath)
+      return (headerSnap, [])
 
   def initializeWorker (meta : DocumentMeta) (i o e : FS.Stream) (initParams : InitializeParams) (opts : Options)
       : IO (WorkerContext × WorkerState) := do
@@ -492,19 +493,19 @@ def initAndRunWorker (i o e : FS.Stream) (opts : Options) : IO UInt32 := do
     return (1 : UInt32)
 
 @[export lean_server_worker_main]
-def workerMain (_ : Options) : IO UInt32 := do
+def workerMain (opts : Options) : IO UInt32 := do
   let i ← IO.getStdin
   let o ← IO.getStdout
-  o.putStr "Start"
+  let e ← IO.getStderr
   try
-    discard $ i.readLspMessage
-  catch e =>
-    o.putStr s!"ERROR: {e}"
-  -- o.putStr "START"
-  -- let str ← i.getLine
-  -- o.putStr str
-  o.putStr "END"
-  return (0 : UInt32)
-
+    let exitCode ← initAndRunWorker i o e opts
+    -- HACK: all `Task`s are currently "foreground", i.e. we join on them on main thread exit, but we definitely don't
+    -- want to do that in the case of the worker processes, which can produce non-terminating tasks evaluating user code
+    o.flush
+    e.flush
+    IO.Process.exit exitCode.toUInt8
+  catch err =>
+    e.putStrLn s!"worker initialization error: {err}"
+    return (1 : UInt32)
 
 end Lean.Server.FileWorker

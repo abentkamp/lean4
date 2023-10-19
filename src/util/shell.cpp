@@ -622,7 +622,7 @@ extern "C" LEAN_EXPORT int lean_main(int argc, char ** argv) {
         }
     }
 
-    // lean::io_mark_end_initialization();
+    lean::io_mark_end_initialization();
 
     // if (print_prefix) {
     //     std::cout << get_io_result<string_ref>(lean_get_prefix(io_mk_world())).data() << std::endl;
