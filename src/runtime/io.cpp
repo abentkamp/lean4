@@ -321,13 +321,15 @@ EM_ASYNC_JS(void, js_read, (uint8_t * pointer, usize nbytes), {
 
 /* Handle.read : (@& Handle) → USize → IO ByteArray */
 extern "C" LEAN_EXPORT obj_res lean_io_prim_handle_read(b_obj_arg h, usize nbytes, obj_arg /* w */) {
-#if defined(LEAN_EMSCRIPTEN)
-    obj_res res = lean_alloc_sarray(1, 0, nbytes);
-    js_read(lean_sarray_cptr(res), nbytes);
-    lean_sarray_set_size(res, nbytes - 1);
-    return io_result_mk_ok(res);
-#else
     FILE * fp = io_get_handle(h);
+#if defined(LEAN_EMSCRIPTEN)
+    if (fp == stdin) {
+        obj_res res = lean_alloc_sarray(1, 0, nbytes);
+        js_read(lean_sarray_cptr(res), nbytes);
+        lean_sarray_set_size(res, nbytes - 1);
+        return io_result_mk_ok(res);
+    }
+#endif
     obj_res res = lean_alloc_sarray(1, 0, nbytes);
     usize n = std::fread(lean_sarray_cptr(res), 1, nbytes, fp);
     if (n > 0) {
@@ -341,7 +343,6 @@ extern "C" LEAN_EXPORT obj_res lean_io_prim_handle_read(b_obj_arg h, usize nbyte
         dec_ref(res);
         return io_result_mk_error(decode_io_error(errno, nullptr));
     }
-#endif
 }
 
 /* Handle.write : (@& Handle) → (@& ByteArray) → IO Unit */
