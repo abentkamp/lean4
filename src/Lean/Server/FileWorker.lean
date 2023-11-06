@@ -195,7 +195,8 @@ section Initialization
     -- parsing should not take long, do synchronously
     let (headerStx, headerParserState, msgLog) ← Parser.parseHeader m.mkInputContext
     (headerStx, ·) <$> EIO.asTask do
-      -- let mut srcSearchPath ← initSrcSearchPath (← getBuildDir)
+      searchPathRef.set ["/lib"]
+      -- let mut srcSearchPath ← initSrcSearchPath "/lib"
       -- let lakePath ← match (← IO.getEnv "LAKE") with
       --   | some path => pure <| System.FilePath.mk path
       --   | none =>
@@ -203,19 +204,19 @@ section Initialization
       --       | some path => pure <| System.FilePath.mk path / "bin" / "lake"
       --       | _         => pure <| (← appDir) / "lake"
       --     pure <| lakePath.withExtension System.FilePath.exeExtension
-      -- let (headerEnv, msgLog) ← try
-      --   if let some path := System.Uri.fileUriToPath? m.uri then
-      --     -- NOTE: we assume for now that `lakefile.lean` does not have any non-stdlib deps
-      --     -- NOTE: lake does not exist in stage 0 (yet?)
-      --     if path.fileName != "lakefile.lean" && (← System.FilePath.pathExists lakePath) then
-      --       let pkgSearchPath ← lakeSetupSearchPath lakePath m (Lean.Elab.headerToImports headerStx) hOut
-      --       srcSearchPath ← initSrcSearchPath (← getBuildDir) pkgSearchPath
-      --   Elab.processHeader headerStx opts msgLog m.mkInputContext
-      -- catch e =>  -- should be from `lake print-paths`
-      --   let msgs := MessageLog.empty.add { fileName := "<ignored>", pos := ⟨0, 0⟩, data := e.toString }
-      --   pure (← mkEmptyEnvironment, msgs)
+      let (headerEnv, msgLog) ← try
+        -- if let some path := System.Uri.fileUriToPath? m.uri then
+        --   -- NOTE: we assume for now that `lakefile.lean` does not have any non-stdlib deps
+        --   -- NOTE: lake does not exist in stage 0 (yet?)
+        --   if path.fileName != "lakefile.lean" && (← System.FilePath.pathExists lakePath) then
+        --     let pkgSearchPath ← lakeSetupSearchPath lakePath m (Lean.Elab.headerToImports headerStx) hOut
+        --     srcSearchPath ← initSrcSearchPath (← getBuildDir) pkgSearchPath
+        Elab.processHeader headerStx opts msgLog m.mkInputContext
+      catch e =>  -- should be from `lake print-paths`
+        let msgs := MessageLog.empty.add { fileName := "<ignored>", pos := ⟨0, 0⟩, data := e.toString }
+        pure (← mkEmptyEnvironment, msgs)
 
-      let mut headerEnv := ← mkEmptyEnvironment
+      let mut headerEnv := headerEnv
       try
         if let some path := System.Uri.fileUriToPath? m.uri then
           headerEnv := headerEnv.setMainModule (← moduleNameOfFileName path none)
