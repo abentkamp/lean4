@@ -286,7 +286,7 @@ jobs:
           else
             ${{ matrix.tar || 'tar' }} cf - $dir | zstd -T0 --no-progress -o pack/$dir.tar.zst
           fi
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: matrix.release
         with:
           name: build-${{ matrix.name }}
@@ -340,7 +340,7 @@ jobs:
             echo bt | $GDB/bin/gdb -q $progbin $c || true
           done
       - name: Upload coredumps
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: ${{ failure() }} && matrix.os == 'ubuntu-latest'
         with:
           name: coredumps-${{ matrix.name }}
